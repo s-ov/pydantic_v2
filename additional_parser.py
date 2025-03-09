@@ -1,10 +1,11 @@
-from typing import List
+from typing import List, Any
 # pip install pydantic[email]
 from pydantic import (
     BaseModel, 
     EmailStr, 
     PositiveInt, 
     conlist, 
+    model_validator,
     field_validator,
     Field, 
     HttpUrl,
@@ -27,6 +28,22 @@ class Employee(BaseModel):
 class Owner(BaseModel):
     name: str 
     email: EmailStr
+
+    @model_validator(mode="before")
+    @classmethod
+    def check_sensetive_info_omited(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if "password" in data:
+                raise ValueError("Password shouldn'n be included")
+            if "card_number" in data:
+                raise ValueError("Card number shouldn'n be included")
+            return data
+        
+    @model_validator(mode="after")
+    def check_name_contains_space(self) -> "Owner":
+        if not " " in self.name:
+            raise ValueError("Owner name must contain a space.")
+        return self.name.title()
 
     @field_validator("name")
     @classmethod
